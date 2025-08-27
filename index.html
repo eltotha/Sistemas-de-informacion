@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Encuesta — Frontend (MySQL vía db.php)</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header>
@@ -542,6 +542,7 @@
 
             const u = USUARIOS.find(x => x.login === login && x.clave === clave);
             if(u){
+              formLogin.reset();
               window._user = u;
               toast('Bienvenido, ' + u.nombre, true);
               updateChips();
@@ -552,7 +553,17 @@
               toast('Credenciales inválidas');
             }
           });
-                  
+               
+        //Log Out
+          $('#logoutBtn').addEventListener('click', ()=>{
+            window._user = null;
+            updateChips();
+            guardiaUI();
+            renderTabla($('#q').value, cacheCats);
+            toast('Sesión cerrada');
+          });
+
+
         // Permisos demo
         $('#guardarPermisos').addEventListener('click', ()=>{
           const checks = $$('#permMatrix input[type="checkbox"]');

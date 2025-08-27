@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Encuesta — Frontend (MySQL vía db.php)</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: #121a2f;
+      --muted: #8ea1c0;
+      --text: #e6ebff;
+      --primary: #5661f6;
+      --primary-600: #4f5af0;
+      --danger: #ff5d6c;
+      --ok: #3ed598;
+      --border: #2a3558;
+      --chip: #1a2340;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 500px at 15% -10%, #1a2240 0%, transparent 60%),
+                  radial-gradient(800px 400px at 95% -5%, #0d1633 0%, transparent 65%),
+                  var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+    header{
+      position:sticky; top:0; z-index:50; backdrop-filter: blur(10px);
+      background: linear-gradient(180deg, rgba(10,15,31,.75), rgba(10,15,31,.45));
+      border-bottom:1px solid var(--border);
+    }
+    .wrap{max-width:1200px; margin:0 auto; padding:16px;}
+    .brand{display:flex; align-items:center; gap:12px; font-weight:700; letter-spacing:.2px}
+    .logo{width:28px; height:28px; border-radius:8px; display:grid; place-items:center; background:linear-gradient(135deg,var(--primary),#8b5cf6); box-shadow: 0 0 0 2px #0003 inset}
+    .logo svg{width:18px; height:18px}
+    .tabs{display:flex; gap:6px; flex-wrap:wrap}
+    .tab{padding:8px 12px; border:1px solid var(--border); border-radius:10px; background:#0f162d; color:var(--muted); cursor:pointer; transition:.2s;}
+    .tab[aria-selected="true"], .tab:hover{color:var(--text); border-color:#3a4880; background: linear-gradient(180deg,#141f3d,#101731)}
+    .grow{flex:1}
+    .status{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+    .chip{padding:6px 10px; border:1px solid var(--border); border-radius:999px; background:var(--chip); color:var(--muted); font-size:.9rem}
+    .btn{appearance:none; border:none; padding:10px 14px; border-radius:12px; background:var(--primary); color:#fff; cursor:pointer; font-weight:600; letter-spacing:.2px; box-shadow: 0 6px 14px rgba(86,97,246,.25); transition:.2s}
+    .btn:hover{transform: translateY(-1px); background:var(--primary-600)}
+    .btn.ghost{background:transparent; border:1px solid var(--border); color:var(--text); box-shadow:none}
+    .btn.danger{background:var(--danger)}
+    main{max-width:1200px; margin: 18px auto; padding: 0 16px 64px;}
+    .grid{display:grid; gap:16px}
+    .grid.cols-2{grid-template-columns: repeat(2, minmax(0,1fr))}
+    .grid.cols-3{grid-template-columns: repeat(3, minmax(0,1fr))}
+    @media (max-width:980px){.grid.cols-2,.grid.cols-3{grid-template-columns:1fr}}
+    .card{background:linear-gradient(180deg, #101732, #0d142a); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow: 0 20px 40px rgba(0,0,0,.25)}
+    .card h3{margin:0 0 10px}
+    .muted{color:var(--muted)}
+    label{display:block; font-size:.92rem; color:#aebbe1; margin:10px 0 6px}
+    input, select{width:100%; background:#0a1024; color:var(--text); border:1px solid #22305b; border-radius:10px; padding:10px 12px; outline:none}
+    input:focus, select:focus{border-color:#3f58ff; box-shadow: 0 0 0 3px #3f58ff22}
+    table{width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:12px;}
+    thead th{position:sticky; top:0; background:#101734; text-align:left; padding:12px; font-weight:700; color:#baccff; border-bottom:1px solid var(--border)}
+    tbody td{padding:10px 12px; border-bottom:1px solid #1b2543}
+    tbody tr:hover{background:#0f1734}
+    .actions{display:flex; gap:8px}
+    .right{margin-left:auto}
+    .stack{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    .hidden{display:none !important}
+    .toast{position:fixed; right:16px; bottom:16px; background:#0b142e; border:1px solid var(--border); color:var(--text); padding:12px 14px; border-radius:12px; box-shadow: 0 14px 30px rgba(0,0,0,.35); opacity:0; transform: translateY(10px); transition:.25s}
+    .toast.show{opacity:1; transform: translateY(0)}
+    .tag{padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:#0b122a; color:#b8c6ef; font-size:.8rem}
+    .search{display:flex; gap:8px; align-items:center}
+    .search input{max-width:300px}
+    footer{opacity:.7; text-align:center; font-size:.9rem; padding:24px 16px; border-top:1px solid var(--border)}
+    @media print{
+      header, .no-print{display:none !important}
+      body{background:#fff; color:#000}
+      .card{box-shadow:none; border:1px solid #000}
+      table{border:1px solid #000}
+      thead th, tbody td{border-bottom:1px solid #000; color:#000}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap" style="display:flex; gap:16px; align-items:center; flex-wrap:wrap">
+      <div class="brand" aria-label="Inicio">
+        <div class="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 4h18"/><path d="M7 8h10"/><rect x="3" y="10" width="18" height="10" rx="2" ry="2" />
+          </svg>
+        </div>
+        <span>Encuesta — Demo Frontend</span>
+      </div>
+      <nav class="tabs no-print" role="tablist" aria-label="Navegación">
+        <button class="tab" role="tab" aria-selected="true" data-view="encuestas">Encuestas</button>
+        <button class="tab" role="tab" aria-selected="false" data-view="catalogos">Catálogos</button>
+        <button class="tab" role="tab" aria-selected="false" data-view="usuarios">Usuarios & Roles</button>
+        <button class="tab" role="tab" aria-selected="false" data-view="conexion">Conexión</button>
+      </nav>
+      <div class="grow"></div>
+      <div class="status no-print">
+        <span id="connChip" class="chip" title="Estado de la BD">DB: Desconectado</span>
+        <span id="roleChip" class="chip">Rol: —</span>
+        <span id="permChip" class="chip">Permisos: —</span>
+        <button class="btn ghost" id="loginBtn">Iniciar sesión</button>
+        <button class="btn ghost hidden" id="logoutBtn">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- VISTA: ENCUESTAS -->
+    <section id="view-encuestas" class="grid cols-2" role="tabpanel">
+      <div class="card">
+        <h3>Registrar / Editar encuesta</h3>
+        <p class="muted">Interfaz basada en tu esquema MySQL. Ahora guarda en MySQL usando <code>db.php</code> (sin seguridad).</p>
+        <form id="formEncuesta" autocomplete="off">
+          <input type="hidden" name="numero" />
+          <div class="grid cols-2">
+            <div><label for="I">Nombre (I) *</label><input id="I" name="I" required maxlength="30" placeholder="Benita Emelina" /></div>
+            <div><label for="II">Apellido (II) *</label><input id="II" name="II" required maxlength="30" placeholder="Avendaño Arauz" /></div>
+            <div><label for="III">Sexo (III) *</label><select id="III" name="III" required></select></div>
+            <div><label for="IV">Identificación (IV) *</label><input id="IV" name="IV" required maxlength="20" placeholder="2811505021015U" /></div>
+            <div><label for="V">Departamento (V) *</label><select id="V" name="V" required></select></div>
+            <div><label for="VI">Ciudad (VI) *</label><select id="VI" name="VI" required></select></div>
+            <div><label for="VII">Facultad (VII) *</label><select id="VII" name="VII" required></select></div>
+            <div><label for="VIII">Carrera (VIII) *</label><select id="VIII" name="VIII" required></select></div>
+            <div><label for="IX">IX (entero) *</label><input id="IX" name="IX" type="number" inputmode="numeric" required /></div>
+            <div><label for="X">Matrícula (X) *</label><select id="X" name="X" required></select></div>
+            <div><label for="XI">Becado (XI) *</label><select id="XI" name="XI" required></select></div>
+            <div><label for="XII">XII *</label><select id="XII" name="XII" required></select></div>
+            <div><label for="XIII">XIII *</label><select id="XIII" name="XIII" required></select></div>
+            <div><label for="XIV">XIV *</label><select id="XIV" name="XIV" required></select></div>
+            <div><label for="XV">Motivo (XV) *</label><select id="XV" name="XV" required></select></div>
+            <div><label for="XVI">Gasto (XVI) *</label><select id="XVI" name="XVI" required></select></div>
+            <div><label for="XVII">Mejora esperada (XVII) *</label><select id="XVII" name="XVII" required></select></div>
+          </div>
+          <div class="stack" style="margin-top:12px">
+            <button type="submit" class="btn" id="btnGuardar">Guardar</button>
+            <button type="button" class="btn ghost" id="btnCancelar">Cancelar</button>
+            <div class="right"></div>
+            <button type="button" class="btn ghost" id="btnCargarEjemplo">Cargar ejemplo</button>
+          </div>
+          <p class="muted" style="margin-top:8px">Permisos requeridos: <span class="tag">registrar_encuesta</span> / <span class="tag">actualizar_encuesta</span></p>
+        </form>
+      </div>
+      <div class="card">
+        <div class="stack">
+          <h3 style="margin:0">Respuestas</h3>
+          <div class="right search no-print">
+            <input id="q" placeholder="Buscar por nombre, apellido o identificación…" aria-label="Buscar" />
+            <button class="btn ghost" id="btnLimpiar">Limpiar</button>
+            <button class="btn ghost" id="btnExportCSV" title="Exportar CSV">Exportar CSV</button>
+            <button class="btn ghost" id="btnExportPDF" title="Imprimir / Guardar como PDF">Exportar PDF</button>
+          </div>
+        </div>
+        <p class="muted">Permisos requeridos: <span class="tag">ver_encuesta</span>, <span class="tag">exportar_excel</span>, <span class="tag">exportar_pdf</span>, <span class="tag">borrar_encuesta</span></p>
+        <div style="overflow:auto; max-height:60vh">
+          <table id="tablaRespuestas" aria-label="Tabla de respuestas">
+            <thead>
+              <tr>
+                <th>#</th><th>Nombre</th><th>Apellido</th><th>Sexo</th><th>Identificación</th>
+                <th>Depto</th><th>Ciudad</th><th>Facultad</th><th>Carrera</th><th>IX</th>
+                <th>Matrícula</th><th>Becado</th><th>XII</th><th>XIII</th><th>XIV</th>
+                <th>Motivo</th><th>Gasto</th><th>Mejora</th><th class="no-print">Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISTA: CATALOGOS -->
+    <section id="view-catalogos" class="grid cols-3 hidden" role="tabpanel" aria-hidden="true">
+      <div class="card"><h3>iii_sexo</h3><ul id="cat-iii_sexo"></ul></div>
+      <div class="card"><h3>v_departamento</h3><ul id="cat-v_departamento"></ul></div>
+      <div class="card"><h3>vi_ciudad</h3><ul id="cat-vi_ciudad"></ul></div>
+      <div class="card"><h3>vii_facultad</h3><ul id="cat-vii_facultad"></ul></div>
+      <div class="card"><h3>viii_carrera</h3><ul id="cat-viii_carrera" style="max-height:50vh; overflow:auto"></ul></div>
+      <div class="card"><h3>x_matricula</h3><ul id="cat-x_matricula"></ul></div>
+      <div class="card"><h3>xi_becado</h3><ul id="cat-xi_becado"></ul></div>
+      <div class="card"><h3>xii</h3><ul id="cat-xii"></ul></div>
+      <div class="card"><h3>xiii</h3><ul id="cat-xiii"></ul></div>
+      <div class="card"><h3>xiv</h3><ul id="cat-xiv"></ul></div>
+      <div class="card"><h3>xv</h3><ul id="cat-xv"></ul></div>
+      <div class="card"><h3>xvi</h3><ul id="cat-xvi"></ul></div>
+      <div class="card"><h3>xvii</h3><ul id="cat-xvii"></ul></div>
+    </section>
+
+    <!-- VISTA: USUARIOS / ROLES -->
+    <section id="view-usuarios" class="grid cols-2 hidden" role="tabpanel" aria-hidden="true">
+      <div class="card">
+        <h3>Usuarios</h3>
+        <table id="tablaUsuarios">
+          <thead><tr><th>ID</th><th>Login</th><th>Nombre</th><th>Rol</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Roles & Permisos</h3>
+        <p class="muted">Basado en <code>rol_permiso</code>. En la demo afecta solo la UI.</p>
+        <div id="permMatrix"></div>
+        <div class="stack" style="margin-top:10px">
+          <button class="btn" id="guardarPermisos">Guardar cambios</button>
+          <span class="muted">Tip: inicia sesión como <b>admin</b>.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISTA: CONEXIÓN -->
+    <section id="view-conexion" class="grid cols-2 hidden" role="tabpanel" aria-hidden="true">
+      <div class="card">
+        <h3>Configurar conexión</h3>
+        <p class="muted">Este frontend habla con <code>db.php</code> (PHP + mysqli). Coloca ambos archivos en tu servidor (XAMPP/WAMP/LAMP).</p>
+        <div class="stack" style="margin-top:12px">
+          <button type="button" class="btn" id="testConn">Probar conexión</button>
+          <button type="button" class="btn ghost" id="verRaw">Ver JSON (respuestas)</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Notas</h3>
+        <pre style="white-space:pre-wrap; background:#0a1126; border:1px solid var(--border); border-radius:12px; padding:12px">
+- db.php expone CRUD directo (SIN seguridad). Sólo para pruebas locales.
+- Asegúrate de importar el dump y ajustar credenciales en db.php.
+- Si no quieres usar PHP, necesitarás otra API que hable con MySQL.
+        </pre>
+      </div>
+    </section>
+  </main>
+
+  <footer class="no-print">Hecho con ❤️ — Demo UI conectada a MySQL vía <code>db.php</code>.</footer>
+
+  <!-- Login modal -->
+  <dialog id="dlgLogin" style="border:none; padding:0; border-radius:16px; background:#0c1530; color:var(--text); width:min(420px, 92vw)">
+    <form method="dialog" style="margin:0">
+      <div class="card" style="border:none">
+        <h3>Iniciar sesión</h3>
+        <p class="muted">Usuarios de ejemplo:</p>
+        <ul class="muted" style="margin-top:0">
+          <li><b>Login:</b> Bran22 — <b>Clave:</b> Bran123 (admin)</li>
+          <li><b>Login:</b> Yos23 — <b>Clave:</b> Yos123 (estudiante)</li>
+        </ul>
+        <label>Usuario</label>
+        <input name="login" required placeholder="Bran22"/>
+        <label>Clave</label>
+        <input name="clave" type="password" required placeholder="••••••"/>
+        <div class="stack" style="margin-top:12px">
+          <button class="btn" value="ok">Entrar</button>
+          <button class="btn ghost" value="cancel">Cancelar</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // ========= CONFIG =========
+    const USE_BACKEND = true; // usa db.php
+
+    // ========= Datos locales (catálogos fallback / roles de demo) =========
+    const CATS = {
+      iii_sexo: [ {clave:0, valor:'Masculino'}, {clave:1, valor:'Femenino'} ],
+      v_departamento: [
+        {clave:0, valor:'Rivas'},{clave:1, valor:'Rio San Juan'},{clave:2, valor:'Nueva Segovia'},{clave:3, valor:'Matagalpa'},{clave:4, valor:'Masaya'},{clave:5, valor:'Managua'},{clave:6, valor:'Madriz'},{clave:7, valor:'Leon'},{clave:8, valor:'Jinotega'},{clave:9, valor:'Granada'},{clave:10, valor:'Esteli'},{clave:11, valor:'Chontales'},{clave:12, valor:'Chinandega'},{clave:13, valor:'Carazo'},{clave:14, valor:'Boaco'},{clave:15, valor:'Atlantico Sur (RAAS)'},{clave:16, valor:'Atlantico Norte (RAAN)'}
+      ],
+      vi_ciudad: [
+        {clave:0, valor:'Rivas'},{clave:1, valor:'Rio San Juan'},{clave:2, valor:'Nueva Segovia'},{clave:3, valor:'Matagalpa'},{clave:4, valor:'Masaya'},{clave:5, valor:'Managua'},{clave:6, valor:'Madriz'},{clave:7, valor:'Leon'},{clave:8, valor:'Jinotega'},{clave:9, valor:'Granada'},{clave:10, valor:'Esteli'},{clave:11, valor:'Chontales'},{clave:12, valor:'Chinandega'},{clave:13, valor:'Carazo'},{clave:14, valor:'Boaco'},{clave:15, valor:'Atlantico Sur (RAAS)'},{clave:16, valor:'Atlantico Norte (RAAN)'}
+      ],
+      vii_facultad: [
+        {clave:0,'valor':'Ciencias Medicas'},{clave:1,'valor':'Ciencias de la Educacion y Humanidades'},{clave:2,'valor':'Facultad de Odontología'},{clave:3,'valor':'Facultad de Ciencias Jurídicas y Sociales'},{clave:4,'valor':'Facultad de Ciencia y Tecnología'},{clave:5,'valor':'Facultad de Ciencias Ecónomicas Empresariales y Turísmo'},{clave:6,'valor':'Facultad de Ciencias Químicas'},{clave:7,'valor':'Escuela Ciencias Agrarías y Veterinarias'}
+      ],
+      viii_carrera: [
+        {clave:0,'valor':'Inglés'},{clave:1,'valor':'Trabajo Social'},{clave:2,'valor':'Medicina'},{clave:3,'valor':'Psicología'},{clave:4,'valor':'Bioanálisis Clínico'},{clave:5,'valor':'Enfermería Profesional'},{clave:6,'valor':'Cirujano Dentista.'},{clave:7,'valor':'Técnico Superior en Asistente Dental.'},{clave:8,'valor':'Ciencias Naturales'},{clave:9,'valor':'Matemática Educativa y Computación'},{clave:10,'valor':'Comunicación Social'},{clave:11,'valor':'Biología'},{clave:12,'valor':'Química'},{clave:13,'valor':'Matemática'},{clave:14,'valor':'Estadstica'},{clave:15,'valor':'Ingeniería en Sistemas de Información'},{clave:16,'valor':'Ingeniería Telemática'},{clave:17,'valor':'Actuariales y Financieras'},{clave:18,'valor':'Derecho'},{clave:19,'valor':'Farmacia'},{clave:20,'valor':'Ingeniería de Alimentos'},{clave:21,'valor':'Economía'},{clave:22,'valor':'Administración de Empresas'},{clave:23,'valor':'Contaduría Pública y Finanzas'},{clave:24,'valor':'Mercadotecnia'},{clave:25,'valor':'Gestión de Empresas Turísticas'},{clave:26,'valor':'Ingeniería Agroecología Tropical'},{clave:27,'valor':'Medicina Veterinaria'},{clave:28,'valor':'Ingeniería Acuicola'}
+      ],
+      x_matricula: [ {clave:0, valor:'Nuevo Ingreso'}, {clave:1, valor:'Reingreso'}, {clave:2, valor:'Repitente'} ],
+      xi_becado: [ {clave:0, valor:'Externo'}, {clave:1, valor:'Interno'}, {clave:2, valor:'Residencia'}, {clave:3, valor:'Sin beca'} ],
+      xii: [ {clave:0, valor:'Siempre'}, {clave:1, valor:'Algunas veces'}, {clave:2, valor:'Casi Nunca'}, {clave:3, valor:'Nunca'} ],
+      xiii: [ {clave:0, valor:'Excelente '}, {clave:1, valor:'Muy Bueno'}, {clave:2, valor:'Bueno'}, {clave:3, valor:'Regular'}, {clave:4, valor:'Malo'} ],
+      xiv: [ {clave:0, valor:'Siempre'}, {clave:1, valor:'Casi Siempre'}, {clave:2, valor:'Raras Veces'}, {clave:3, valor:'Nunca'} ],
+      xv: [ {clave:0, valor:'Mayor Comodidad'}, {clave:1, valor:'Mayor Facilidad para Matricularse'}, {clave:2, valor:'Ahorrar Tiempo'} ],
+      xvi: [ {clave:0, valor:'0 - 100 C$'}, {clave:1, valor:'101 - 500 C$'}, {clave:2, valor:'501 - 1000 C$'}, {clave:3, valor:'Más de 1000 C$'} ],
+      xvii: [ {clave:0, valor:'Que esté mas disponible'}, {clave:1, valor:'Que sea mas moderno'}, {clave:2, valor:'Que funcione con mayor Facilidad y Rapidez'}, {clave:3, valor:'Que de mas informacion'} ],
+    };
+
+    const PERMISOS = { 1:'registrar_encuesta', 2:'actualizar_encuesta', 3:'borrar_encuesta', 4:'ver_encuesta', 5:'exportar_excel', 6:'exportar_pdf' };
+    const ROLES = [ {idrol:1, nombre_rol:'admin'}, {idrol:2, nombre_rol:'estudiante'}, {idrol:3, nombre_rol:'profesor'} ];
+    let ROL_PERMISO = [
+      {idrol:1, idpermiso:1},{idrol:2, idpermiso:1},
+      {idrol:1, idpermiso:2},{idrol:2, idpermiso:2},{idrol:3, idpermiso:2},
+      {idrol:1, idpermiso:3},
+      {idrol:1, idpermiso:4},{idrol:3, idpermiso:4},
+      {idrol:1, idpermiso:5},{idrol:3, idpermiso:5},
+      {idrol:1, idpermiso:6},{idrol:3, idpermiso:6},
+    ];
+    let USUARIOS = [
+      {idusuario:1, login:'Bran22', clave:'Bran123', nombre:'Brandon Altamirano', idrol:1},
+      {idusuario:2, login:'Yos23', clave:'Yos123', nombre:'Yoselyn Padilla', idrol:2},
+    ];
+
+    const LS = { respuestas: 'encuesta_respuestas', permisos: 'encuesta_rol_permiso' };
+
+    // ========= Utils =========
+    const $ = (sel, el=document) => el.querySelector(sel);
+    const $$ = (sel, el=document) => [...el.querySelectorAll(sel)];
+    const toast = (msg, ok=false) => {
+      const t = $('#toast');
+      t.textContent = msg; t.classList.add('show');
+      t.style.borderColor = ok ? '#2e946a' : 'var(--border)';
+      setTimeout(()=> t.classList.remove('show'), 1800);
+    };
+    const hasPerm = (permName) => {
+      if(!window._user) return false;
+      const role = window._user.idrol;
+      const pid = Object.entries(PERMISOS).find(([,n])=> n===permName)?.[0];
+      return ROL_PERMISO.some(rp => rp.idrol===role && String(rp.idpermiso)===String(pid));
+    };
+
+    // ========= API: usa db.php si USE_BACKEND =========
+    const API = {
+      async listRespuestas(){
+        if(!USE_BACKEND){
+          const raw = localStorage.getItem(LS.respuestas);
+          return raw ? JSON.parse(raw) : [];
+        }
+        const r = await fetch('db.php?action=list_respuestas');
+        if(!r.ok) throw new Error('Error list_respuestas');
+        return r.json();
+      },
+      async createRespuesta(item){
+        if(!USE_BACKEND){
+          const list = await this.listRespuestas();
+          item.numero = (list.at(-1)?.numero || 0) + 1;
+          list.push(item);
+          localStorage.setItem(LS.respuestas, JSON.stringify(list));
+          return item;
+        }
+        const r = await fetch('db.php?action=create_respuesta', {
+          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(item)
+        });
+        if(!r.ok) throw new Error('Error create_respuesta');
+        return r.json();
+      },
+      async updateRespuesta(numero, patch){
+        if(!USE_BACKEND){
+          const list = await this.listRespuestas();
+          const idx = list.findIndex(r=> r.numero===Number(numero));
+          if(idx>-1){ list[idx] = {...list[idx], ...patch}; localStorage.setItem(LS.respuestas, JSON.stringify(list)); return list[idx]; }
+          throw new Error('No encontrado');
+        }
+        const r = await fetch('db.php?action=update_respuesta&numero='+encodeURIComponent(numero), {
+          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(patch)
+        });
+        if(!r.ok) throw new Error('Error update_respuesta');
+        return r.json();
+      },
+      async deleteRespuesta(numero){
+        if(!USE_BACKEND){
+          const list = await this.listRespuestas();
+          const n = list.filter(r=> r.numero!==Number(numero));
+          localStorage.setItem(LS.respuestas, JSON.stringify(n));
+          return true;
+        }
+        const r = await fetch('db.php?action=delete_respuesta&numero='+encodeURIComponent(numero));
+        if(!r.ok) throw new Error('Error delete_respuesta');
+        return true;
+      },
+      async listCatalogo(nombre){
+        if(!USE_BACKEND) return CATS[nombre] || [];
+        const r = await fetch('db.php?action=list_catalogo&nombre='+encodeURIComponent(nombre));
+        if(!r.ok) throw new Error('Error list_catalogo '+nombre);
+        return r.json();
+      },
+      async listUsuarios(){ return USUARIOS; },
+      async listRoles(){ return ROLES; },
+      async listPermisos(){ return PERMISOS; },
+    };
+
+    // ========= UI helpers =========
+    const mapTxt = (catName, clave, cache) => (cache?.[catName]?.find(x=> String(x.clave)===String(clave))?.valor ?? clave);
+
+    async function fillSelect(id, catName, cache){
+      const sel = $('#'+id);
+      sel.innerHTML = '';
+      const items = cache?.[catName] ?? await API.listCatalogo(catName);
+      if(cache && !cache[catName]) cache[catName] = items;
+      items.forEach(opt=>{
+        const o = document.createElement('option');
+        o.value = opt.clave; o.textContent = opt.valor; sel.appendChild(o);
+      });
+    }
+
+    async function fillCatalogLists(cache){
+      for(const k of Object.keys(CATS)){ // usamos claves conocidas
+        const ul = $('#cat-'+k);
+        if(!ul) continue;
+        ul.innerHTML = '';
+        const items = cache?.[k] ?? await API.listCatalogo(k);
+        if(cache && !cache[k]) cache[k] = items;
+        items.forEach(({clave,valor})=>{
+          const li = document.createElement('li');
+          li.innerHTML = `<span class="tag">${clave}</span> ${valor}`;
+          ul.appendChild(li);
+        });
+      }
+    }
+
+    async function renderTabla(filter='', cacheCats){
+      const tb = $('#tablaRespuestas tbody');
+      tb.innerHTML = '';
+      const rows = (await API.listRespuestas()).filter(r=>{
+        const f = filter.trim().toLowerCase();
+        if(!f) return true;
+        return [r.I, r.II, r.IV].some(x=> String(x).toLowerCase().includes(f));
+      });
+      for(const r of rows){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${r.numero}</td>
+          <td>${r.I}</td>
+          <td>${r.II}</td>
+          <td>${mapTxt('iii_sexo', r.III, cacheCats)}</td>
+          <td>${r.IV}</td>
+          <td>${mapTxt('v_departamento', r.V, cacheCats)}</td>
+          <td>${mapTxt('vi_ciudad', r.VI, cacheCats)}</td>
+          <td>${mapTxt('vii_facultad', r.VII, cacheCats)}</td>
+          <td>${mapTxt('viii_carrera', r.VIII, cacheCats)}</td>
+          <td>${r.IX}</td>
+          <td>${mapTxt('x_matricula', r.X, cacheCats)}</td>
+          <td>${mapTxt('xi_becado', r.XI, cacheCats)}</td>
+          <td>${mapTxt('xii', r.XII, cacheCats)}</td>
+          <td>${mapTxt('xiii', r.XIII, cacheCats)}</td>
+          <td>${mapTxt('xiv', r.XIV, cacheCats)}</td>
+          <td>${mapTxt('xv', r.XV, cacheCats)}</td>
+          <td>${mapTxt('xvi', r.XVI, cacheCats)}</td>
+          <td>${mapTxt('xvii', r.XVII, cacheCats)}</td>
+          <td class="no-print">
+            <div class="actions">
+              <button class="btn ghost" data-act="edit">Editar</button>
+              <button class="btn danger" data-act="del">Borrar</button>
+            </div>
+          </td>
+        `;
+        const canEdit = hasPerm('actualizar_encuesta');
+        const canDel = hasPerm('borrar_encuesta');
+        if(!canEdit) tr.querySelector('[data-act="edit"]').disabled = true;
+        if(!canDel) tr.querySelector('[data-act="del"]').disabled = true;
+
+        tr.querySelector('[data-act="edit"]').addEventListener('click', ()=> loadIntoForm(r));
+        tr.querySelector('[data-act="del"]').addEventListener('click', async ()=>{
+          if(!hasPerm('borrar_encuesta')){ toast('No tienes permiso para borrar'); return; }
+          if(confirm('¿Borrar registro #' + r.numero + '?')){
+            await API.deleteRespuesta(r.numero); toast('Eliminado', true); renderTabla($('#q').value, cacheCats)
+          }
+        });
+        tb.appendChild(tr);
+      }
+    }
+
+    function loadIntoForm(r){
+      const f = $('#formEncuesta');
+      for(const k of ['numero','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII']){
+        f.elements[k].value = r[k];
+      }
+      $('#btnGuardar').textContent = 'Actualizar';
+    }
+
+    function resetForm(){
+      $('#formEncuesta').reset();
+      $('#btnGuardar').textContent = 'Guardar';
+    }
+
+    function updateChips(){
+      const roleChip = $('#roleChip');
+      const permChip = $('#permChip');
+      if(window._user){
+        const rol = ROLES.find(r=> r.idrol===window._user.idrol)?.nombre_rol || '—';
+        roleChip.textContent = 'Rol: ' + rol;
+        const ps = ROL_PERMISO.filter(rp=> rp.idrol===window._user.idrol).map(rp=> PERMISOS[rp.idpermiso]).join(', ');
+        permChip.textContent = 'Permisos: ' + (ps||'—');
+        $('#loginBtn').classList.add('hidden'); $('#logoutBtn').classList.remove('hidden');
+      } else {
+        roleChip.textContent = 'Rol: —'; permChip.textContent = 'Permisos: —';
+        $('#loginBtn').classList.remove('hidden'); $('#logoutBtn').classList.add('hidden');
+      }
+    }
+
+    function guardiaUI(){
+      $('[data-view="usuarios"]').disabled = !window._user;
+      $('#btnGuardar').disabled = !(hasPerm('registrar_encuesta') || hasPerm('actualizar_encuesta'));
+      $('#btnExportCSV').disabled = !hasPerm('exportar_excel');
+      $('#btnExportPDF').disabled = !hasPerm('exportar_pdf');
+    }
+
+    function renderUsuarios(){
+      const tb = $('#tablaUsuarios tbody'); tb.innerHTML='';
+      USUARIOS.forEach(u=>{
+        const rol = ROLES.find(r=> r.idrol===u.idrol)?.nombre_rol || '—';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${u.idusuario}</td><td>${u.login}</td><td>${u.nombre}</td><td><span class="tag">${rol}</span></td>`;
+        tb.appendChild(tr);
+      });
+    }
+
+    function renderPermMatrix(){
+      const c = $('#permMatrix'); c.innerHTML = '';
+      const table = document.createElement('table');
+      const thead = document.createElement('thead');
+      thead.innerHTML = '<tr><th>Rol</th>'+Object.values(PERMISOS).map(p=>`<th>${p}</th>`).join('')+'</tr>';
+      table.appendChild(thead);
+      const tbody = document.createElement('tbody');
+      ROLES.forEach(rol=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><b>${rol.nombre_rol}</b></td>` + Object.entries(PERMISOS).map(([idp,name])=>{
+          const checked = ROL_PERMISO.some(rp=> rp.idrol===rol.idrol && rp.idpermiso===Number(idp));
+          return `<td><input type="checkbox" data-r="${rol.idrol}" data-p="${idp}" ${checked?'checked':''}></td>`;
+        }).join('');
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody); c.appendChild(table);
+    }
+
+    function exportCSV(){
+      const headers = ['numero','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII'];
+      API.listRespuestas().then(rows=>{
+        const csv = [headers.join(',')].concat(rows.map(r=> headers.map(h=> JSON.stringify(r[h]??'')).join(','))).join('\n');
+        const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href=url; a.download='respuestas.csv'; a.click(); URL.revokeObjectURL(url);
+      });
+    }
+
+    function showView(name){
+      $$('.tab').forEach(t=> t.setAttribute('aria-selected', String(t.dataset.view===name)));
+      ['encuestas','catalogos','usuarios','conexion'].forEach(v=>{
+        const el = $('#view-'+v);
+        if(v===name){ el.classList.remove('hidden'); el.setAttribute('aria-hidden','false'); }
+        else { el.classList.add('hidden'); el.setAttribute('aria-hidden','true'); }
+      });
+    }
+
+    function seed(){
+      // Solo sembrar ejemplo si NO usamos backend
+      if(!USE_BACKEND && !localStorage.getItem(LS.respuestas)){
+        const ejemplo = { numero:1, I:'Benita Emelina', II:'Avendaño Arauz', III:1, IV:'2811505021015U', V:7, VI:7, VII:4, VIII:15, IX:5, X:1, XI:0, XII:1, XIII:2, XIV:3, XV:1, XVI:0, XVII:3 };
+        localStorage.setItem(LS.respuestas, JSON.stringify([ejemplo]));
+      }
+      const saved = localStorage.getItem(LS.permisos);
+      if(saved){ ROL_PERMISO = JSON.parse(saved); }
+    }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const cacheCats = {}; // guardamos catálogos consultados
+      seed();
+
+      // Inicialización asíncrona
+      (async function init(){
+        // Cargar selects desde BD (o fallback)
+        await Promise.all([
+          fillSelect('III','iii_sexo', cacheCats),
+          fillSelect('V','v_departamento', cacheCats),
+          fillSelect('VI','vi_ciudad', cacheCats),
+          fillSelect('VII','vii_facultad', cacheCats),
+          fillSelect('VIII','viii_carrera', cacheCats),
+          fillSelect('X','x_matricula', cacheCats),
+          fillSelect('XI','xi_becado', cacheCats),
+          fillSelect('XII','xii', cacheCats),
+          fillSelect('XIII','xiii', cacheCats),
+          fillSelect('XIV','xiv', cacheCats),
+          fillSelect('XV','xv', cacheCats),
+          fillSelect('XVI','xvi', cacheCats),
+          fillSelect('XVII','xvii', cacheCats),
+        ]);
+
+        await fillCatalogLists(cacheCats);
+        await renderTabla('', cacheCats);
+        renderUsuarios();
+        renderPermMatrix();
+        updateChips();
+        guardiaUI();
+        showView('encuestas');
+
+        // Tabs
+        $$('.tab').forEach(t=> t.addEventListener('click', ()=> showView(t.dataset.view)));
+
+        // Buscar
+        $('#q').addEventListener('input', (e)=> renderTabla(e.target.value, cacheCats));
+        $('#btnLimpiar').addEventListener('click', ()=> { $('#q').value=''; renderTabla('', cacheCats); });
+
+        // CRUD form
+        $('#formEncuesta').addEventListener('submit', async (e)=>{
+          e.preventDefault();
+          const f = e.target;
+          const data = Object.fromEntries(new FormData(f).entries());
+          ['numero','III','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII'].forEach(k=>{ if(data[k]!==undefined && data[k]!=='' ) data[k] = Number(data[k]) });
+
+          if(data.numero){
+            if(!hasPerm('actualizar_encuesta')){ toast('No tienes permiso para actualizar'); return; }
+            await API.updateRespuesta(data.numero, data);
+            toast('Encuesta actualizada', true);
+          } else {
+            if(!hasPerm('registrar_encuesta')){ toast('No tienes permiso para registrar'); return; }
+            const created = await API.createRespuesta(data);
+            toast('Encuesta registrada (#'+created.numero+')', true);
+          }
+          resetForm(); renderTabla($('#q').value, cacheCats);
+        });
+        $('#btnCancelar').addEventListener('click', resetForm);
+        $('#btnCargarEjemplo').addEventListener('click', ()=>{
+          $('#formEncuesta').reset();
+          loadIntoForm({ I:'Benita Emelina', II:'Avendaño Arauz', III:1, IV:'2811505021015U', V:7, VI:7, VII:4, VIII:15, IX:5, X:1, XI:0, XII:1, XIII:2, XIV:3, XV:1, XVI:0, XVII:3 });
+        });
+
+        // Export
+        $('#btnExportCSV').addEventListener('click', ()=> hasPerm('exportar_excel') ? exportCSV() : toast('Sin permiso'));
+        $('#btnExportPDF').addEventListener('click', ()=> hasPerm('exportar_pdf') ? window.print() : toast('Sin permiso'));
+
+        // Login
+        const dlg = $('#dlgLogin');
+        $('#loginBtn').addEventListener('click', ()=> dlg.showModal());
+        dlg.addEventListener('close', ()=>{
+          if(dlg.returnValue==='ok'){
+            const login = dlg.querySelector('input[name="login"]').value.trim();
+            const clave = dlg.querySelector('input[name="clave"]').value.trim();
+            const u = USUARIOS.find(x=> x.login===login && x.clave===clave);
+            if(u){ window._user = u; toast('Bienvenido, '+u.nombre, true); updateChips(); guardiaUI(); renderTabla($('#q').value, cacheCats); }
+            else { toast('Credenciales inválidas'); }
+          }
+          dlg.querySelector('form').reset();
+        });
+        $('#logoutBtn').addEventListener('click', ()=>{ window._user = null; updateChips(); guardiaUI(); renderTabla($('#q').value, cacheCats); toast('Sesión cerrada'); });
+
+        // Permisos demo
+        $('#guardarPermisos').addEventListener('click', ()=>{
+          const checks = $$('#permMatrix input[type="checkbox"]');
+          const nuevo = [];
+          ROLES.forEach(r=>{
+            Object.keys(PERMISOS).forEach(idp=>{
+              const ok = checks.find(c=> Number(c.dataset.r)===r.idrol && Number(c.dataset.p)===Number(idp))?.checked;
+              if(ok) nuevo.push({idrol:r.idrol, idpermiso:Number(idp)});
+            });
+          });
+          ROL_PERMISO = nuevo;
+          localStorage.setItem(LS.permisos, JSON.stringify(ROL_PERMISO));
+          updateChips(); guardiaUI(); renderTabla($('#q').value, cacheCats);
+          toast('Permisos actualizados', true);
+        });
+
+        // Conexión: probar y ver JSON crudo
+        $('#testConn').addEventListener('click', async ()=>{
+          try{
+            const r = await fetch('db.php?action=list_respuestas');
+            if(!r.ok) throw new Error();
+            await r.json();
+            toast('Conexión OK', true);
+            const chip = $('#connChip'); chip.textContent = 'DB: Conectado'; chip.style.background = '#10331f'; chip.style.color = '#b6ffd3';
+          }catch(e){
+            toast('Falla al conectar', false);
+            const chip = $('#connChip'); chip.textContent = 'DB: Error'; chip.style.background = '#3b1420';
+          }
+        });
+        $('#verRaw').addEventListener('click', async ()=>{
+          try{
+            const data = await API.listRespuestas();
+            alert('JSON:\n'+JSON.stringify(data, null, 2).slice(0, 3000));
+          }catch(e){ toast('No se pudo obtener JSON'); }
+        });
+      })();
+    });
+  </script>
+</body>
+</html>

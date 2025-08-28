@@ -1,5 +1,4 @@
-<script>
-    // ========= CONFIG =========
+  // ========= CONFIG =========
     const USE_BACKEND = true; // usa db.php
     let cacheCats = {};
 
@@ -423,4 +422,3 @@
         });
       })();
     });
-  </script>

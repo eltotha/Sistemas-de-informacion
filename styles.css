@@ -271,4 +271,22 @@ footer {
     border-bottom: 1px solid #000;
     color: #000;
   }
+
+  .toast {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  background: #333;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: 9999;
+  }
+  .toast.show {
+    opacity: 1; 
+  }
+
 }

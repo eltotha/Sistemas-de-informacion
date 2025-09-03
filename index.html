@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Encuesta — Frontend (MySQL vía db.php)</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="script.js"></script>
 </head>
 <body>
   <header>
@@ -41,34 +40,86 @@
         <h3>Registrar / Editar encuesta</h3>
         <p class="muted">Interfaz basada en tu esquema MySQL. Ahora guarda en MySQL usando <code>db.php</code> (sin seguridad).</p>
         <form id="formEncuesta" autocomplete="off">
-          <input type="hidden" name="numero" />
-          <div class="grid cols-2">
-            <div><label for="I">Nombre (I) *</label><input id="I" name="I" required maxlength="30" placeholder="Benita Emelina" /></div>
-            <div><label for="II">Apellido (II) *</label><input id="II" name="II" required maxlength="30" placeholder="Avendaño Arauz" /></div>
-            <div><label for="III">Sexo (III) *</label><select id="III" name="III" required></select></div>
-            <div><label for="IV">Identificación (IV) *</label><input id="IV" name="IV" required maxlength="20" placeholder="2811505021015U" /></div>
-            <div><label for="V">Departamento (V) *</label><select id="V" name="V" required></select></div>
-            <div><label for="VI">Ciudad (VI) *</label><select id="VI" name="VI" required></select></div>
-            <div><label for="VII">Facultad (VII) *</label><select id="VII" name="VII" required></select></div>
-            <div><label for="VIII">Carrera (VIII) *</label><select id="VIII" name="VIII" required></select></div>
-            <div><label for="IX">IX (entero) *</label><input id="IX" name="IX" type="number" inputmode="numeric" required /></div>
-            <div><label for="X">Matrícula (X) *</label><select id="X" name="X" required></select></div>
-            <div><label for="XI">Becado (XI) *</label><select id="XI" name="XI" required></select></div>
-            <div><label for="XII">XII *</label><select id="XII" name="XII" required></select></div>
-            <div><label for="XIII">XIII *</label><select id="XIII" name="XIII" required></select></div>
-            <div><label for="XIV">XIV *</label><select id="XIV" name="XIV" required></select></div>
-            <div><label for="XV">Motivo (XV) *</label><select id="XV" name="XV" required></select></div>
-            <div><label for="XVI">Gasto (XVI) *</label><select id="XVI" name="XVI" required></select></div>
-            <div><label for="XVII">Mejora esperada (XVII) *</label><select id="XVII" name="XVII" required></select></div>
-          </div>
-          <div class="stack" style="margin-top:12px">
-            <button type="submit" class="btn" id="btnGuardar">Guardar</button>
-            <button type="button" class="btn ghost" id="btnCancelar">Cancelar</button>
-            <div class="right"></div>
-            <button type="button" class="btn ghost" id="btnCargarEjemplo">Cargar ejemplo</button>
-          </div>
-          <p class="muted" style="margin-top:8px">Permisos requeridos: <span class="tag">registrar_encuesta</span> / <span class="tag">actualizar_encuesta</span></p>
-        </form>
+      <input type="hidden" name="numero" />
+      <div class="grid cols-2">
+        <div>
+          <label for="I">Nombre (I) *</label>
+          <input id="I" name="I" type="text" required maxlength="30" placeholder="Benita Emelina" />
+        </div>
+        <div>
+          <label for="II">Apellido (II) *</label>
+          <input id="II" name="II" type="text" required maxlength="30" placeholder="Avendaño Arauz" />
+        </div>
+        <div>
+          <label for="III">Sexo (III) *</label>
+          <select id="III" name="III" required></select>
+        </div>
+        <div>
+          <label for="IV">Identificación (IV) *</label>
+          <input id="IV" name="IV" type="text" required maxlength="20" placeholder="2811505021015U" />
+        </div>
+        <div>
+          <label for="V">Departamento (V) *</label>
+          <select id="V" name="V" required></select>
+        </div>
+        <div>
+          <label for="VI">Ciudad (VI) *</label>
+          <select id="VI" name="VI" required></select>
+        </div>
+        <div>
+          <label for="VII">Facultad (VII) *</label>
+          <select id="VII" name="VII" required></select>
+        </div>
+        <div>
+          <label for="VIII">Carrera (VIII) *</label>
+          <select id="VIII" name="VIII" required></select>
+        </div>
+        <div>
+          <label for="IX">IX (entero) *</label>
+          <input id="IX" name="IX" type="number" inputmode="numeric" required />
+        </div>
+        <div>
+          <label for="X">Matrícula (X) *</label>
+          <select id="X" name="X" required></select>
+        </div>
+        <div>
+          <label for="XI">Becado (XI) *</label>
+          <select id="XI" name="XI" required></select>
+        </div>
+        <div>
+          <label for="XII">XII *</label>
+          <select id="XII" name="XII" required></select>
+        </div>
+        <div>
+          <label for="XIII">XIII *</label>
+          <select id="XIII" name="XIII" required></select>
+        </div>
+        <div>
+          <label for="XIV">XIV *</label>
+          <select id="XIV" name="XIV" required></select>
+        </div>
+        <div>
+          <label for="XV">Motivo (XV) *</label>
+          <select id="XV" name="XV" required></select>
+        </div>
+        <div>
+          <label for="XVI">Gasto (XVI) *</label>
+          <select id="XVI" name="XVI" required></select>
+        </div>
+        <div>
+          <label for="XVII">Mejora esperada (XVII) *</label>
+          <select id="XVII" name="XVII" required></select>
+        </div>
+      </div>
+
+    <div class="stack" style="margin-top:12px">
+      <button type="submit" class="btn" id="btnGuardar">Guardar</button>
+      <button type="button" class="btn ghost" id="btnCancelar">Cancelar</button>
+      <div class="right"></div>
+      <button type="button" class="btn ghost" id="btnCargarEjemplo">Cargar ejemplo</button>
+    </div>
+</form>
+
       </div>
       <div class="card">
         <div class="stack">
@@ -144,9 +195,9 @@
       <div class="card">
         <h3>Notas</h3>
         <pre style="white-space:pre-wrap; background:#0a1126; border:1px solid var(--border); border-radius:12px; padding:12px">
-- db.php expone CRUD directo (SIN seguridad). Sólo para pruebas locales.
-- Asegúrate de importar el dump y ajustar credenciales en db.php.
-- Si no quieres usar PHP, necesitarás otra API que hable con MySQL.
+            - db.php expone CRUD directo (SIN seguridad). Sólo para pruebas locales.
+            - Asegúrate de importar el dump y ajustar credenciales en db.php.
+            - Si no quieres usar PHP, necesitarás otra API que hable con MySQL.
         </pre>
       </div>
     </section>
@@ -176,6 +227,8 @@
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="script.js"></script>
 </body>
 </html>
 
